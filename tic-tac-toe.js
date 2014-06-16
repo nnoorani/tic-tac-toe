@@ -5,31 +5,34 @@ initialBoard = [0,0,0,0,0,0,0,0,0]
 board = [0,0,0,0,0,0,0,0,0],
 _this = this;
 
-// firebase references 
+// firebase references
 var gameRef = new Firebase('https://blinding-fire-6122.firebaseio.com/'),
-playerRef = gameRef.child('player_list'), userRef,
-hiddenRef = gameRef.child('hidden'),
-boardRef = gameRef.child('board');
-turnRef = gameRef.child('turn');
+playerRef = gameRef.child('player_list'), userRef;
 
-var NUM_PLAYERS = 2,
+//set up assets
 LETTER_X = new Image,
 LETTER_O = new Image;
-
 LETTER_O.src = 'letter_o.png';
 LETTER_X.src = 'letter_x.png'
 
+//this gets called for login
 var auth = new FirebaseSimpleLogin(gameRef, function(error, user) {
+	//we have a user, YAY!
 	if ( user ) {
-		$('h2').text('Welcome ' + user.displayName +'!');
-		userRef = playerRef.child(user.id);
-		userRef.child('displayName').set(user.displayName);
-		manageConnection(user);
+		$('h2').text('Welcome ' + user.displayName +'!'); //welcome our user
+		
+		userRef = playerRef.child(user.id); //setup gloabl db
+		userRef.child('displayName').set(user.displayName); //add user to firebase
+		
+		manageConnection(user); //online status
+		userRef.on('value', showBoard); //show the board when playing
+
+		controller = new TicTacToe.Controller(user); //start the app
 	}
-	controller = new TicTacToe.Controller(user);
 });
 
-var manageConnection = function(user) {
+//sets online status to true/false on connect/disconect
+function manageConnection(user) {
 	onlineRef = userRef.child('online'),
 	connectedRef = new Firebase('https://blinding-fire-6122.firebaseio.com/.info/connected');
 	connectedRef.on('value', function(snap) {
@@ -40,29 +43,28 @@ var manageConnection = function(user) {
 	});
 }
 
-var updateLobby = function(snapshot) {
-	var player_list = snapshot.val()
+//this gets called when the player list is updated
+playerRef.on('value', updateLobby);
+function updateLobby(snapshot) {
+	var player_list = snapshot.val()	
 	lobbyHTML = '';
-
 	for ( player in player_list ) {
+		//if the player is online, show him the lobby
 		if (player_list[player].online) {
 			lobbyHTML += '<li>' + player_list[player].displayName + '</li>';
 		}
 	}
-
 	$('.lobby').html(lobbyHTML);
 }
 
-var showBoard = function(snapshot) {
-	var hidden = snapshot.val();
-
-	if ( hidden === false) {
-		$('.board').removeClass('dimmed');
-		$('.status').text('Ready to play!')
-	}
+//this gets called when my own name is updated
+function showBoard(snapshot) {
+	var me = snapshot.val();
+	if (me.playing) $('.board').removeClass('dimmed');
+	else $('.board').addClass('dimmed');
 }
 
-var updateBoard = function(snapshot) {
+function updateBoard(snapshot) {
 	var boardStatus = snapshot.val(),
 	i = 0,
 	ticSpot, 
@@ -199,11 +201,9 @@ TicTacToe.Controller.prototype.joinGame = function(playerNum) {
 auth.login('facebook');
 
 // when the board is in a ready state, need to trigger it to be shown and dimmed for the second player
-hiddenRef.on('value', showBoard);
-boardRef.on('value', updateBoard)
-turnRef.on('value', function(snapshot){
-	var turnNum = snapshot.val()
-	_this.turnNum = turnNum;
-})
-playerRef.on('value', updateLobby);
+// boardRef.on('value', updateBoard)
+// turnRef.on('value', function(snapshot){
+// 	var turnNum = snapshot.val()
+// 	_this.turnNum = turnNum;
+// })
 
