@@ -172,11 +172,6 @@ TicTacToe.Controller = function(user) {
 	this.playState = 0;
 }
 
-// create the board
-TicTacToe.Controller.prototype.initializeGame = function() {
-	this.board = new TicTacToe.Board();
-}
-
 // once player has gotten a spot in the game, we set their player reference
 TicTacToe.Controller.prototype.joinGame = function(playerNum) {
 	this.myPlayerRef = this.gameRef.child('player_list').child(playerNum);
@@ -190,7 +185,7 @@ TicTacToe.Controller.prototype.joinGame = function(playerNum) {
     	_this.myPlayerRef.marker = 'X';
     }
 
-    this.initializeGame();
+    this.board = new TicTacToe.Board();
 
     if ( this.ready === true ) {
 		this.gameRef.child('hidden').set(false);
