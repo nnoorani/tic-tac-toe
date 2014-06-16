@@ -1,4 +1,4 @@
-h1, h2, h3, p {
+h1, h2, h3, li, p {
 	font-family: 'Helvetica Neue', 'Tahoma';
 	font-weight: 100;
 	text-align: center;
@@ -15,20 +15,26 @@ p {
 	font-size: 1em;
 }
 
+li {
+	list-style: none;
+	cursor: pointer;
+}
+
 .canvas {
 	display: inline-block;
 	border: 1px solid;
 }
 
 .board {
-	text-align: center;
+	position: relative;
+	text-align: right;
 	padding: 30px;
 	background-color: rgba(238,238,238,0.5);
 }
 
 .dimmed {
 	background-color: #EEE;
-	opacity: 0.5;
+	opacity: 0;
 }
 
 .warning {
@@ -47,4 +53,13 @@ p {
 .winner {
 	background-color: #A8BF12;
 	border: 1px solid #aaa;
+}
+
+.lobby {
+	position: absolute;
+	padding: 10px;
+}
+
+.lobby > li {
+	text-align: left;
 }
