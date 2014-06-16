@@ -7,10 +7,10 @@ _this = this;
 
 // firebase references 
 var gameRef = new Firebase('https://blinding-fire-6122.firebaseio.com/'),
-playerRef = gameRef.child('player_list'),
-boardRef = gameRef.child('board'), 
+playerRef = gameRef.child('player_list'), userRef,
 hiddenRef = gameRef.child('hidden'),
-turnRef = gameRef.child('turnNumber');
+boardRef = gameRef.child('board');
+turnRef = gameRef.child('turn');
 
 var NUM_PLAYERS = 2,
 LETTER_X = new Image,
@@ -22,26 +22,20 @@ LETTER_X.src = 'letter_x.png'
 var auth = new FirebaseSimpleLogin(gameRef, function(error, user) {
 	if ( user ) {
 		$('h2').text('Welcome ' + user.displayName +'!');
-		gameRef.child('player_list').child(user.id).child('displayName').set(user.displayName);
+		userRef = playerRef.child(user.id);
+		userRef.child('displayName').set(user.displayName);
 		manageConnection(user);
 	}
 	controller = new TicTacToe.Controller(user);
 });
 
 var manageConnection = function(user) {
-	var name = user.displayName,
-	connectionRef = gameRef.child('player_list').child(user.id).child('connections'),
+	onlineRef = userRef.child('online'),
 	connectedRef = new Firebase('https://blinding-fire-6122.firebaseio.com/.info/connected');
 	connectedRef.on('value', function(snap) {
 	  if (snap.val() === true) {
-	    // We're connected (or reconnected)! Do anything here that should happen only if online (or on reconnect)
-
-	    // add this device to my connections list
-	    // this value could contain info about the device or a timestamp too
-	    var con = connectionRef.push(true);
-
-	    // when I disconnect, remove this device
-	    con.onDisconnect().remove();
+	    var con = onlineRef.set(true);
+	    onlineRef.onDisconnect().set(false);
 	  }
 	});
 }
@@ -51,7 +45,9 @@ var updateLobby = function(snapshot) {
 	lobbyHTML = '';
 
 	for ( player in player_list ) {
-		lobbyHTML += '<li>' + player_list[player].displayName + '</li>';
+		if (player_list[player].online) {
+			lobbyHTML += '<li>' + player_list[player].displayName + '</li>';
+		}
 	}
 
 	$('.lobby').html(lobbyHTML);
