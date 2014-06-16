@@ -7,6 +7,7 @@ _this = this;
 
 // firebase references 
 var gameRef = new Firebase('https://blinding-fire-6122.firebaseio.com/'),
+playerRef = gameRef.child('player_list'),
 boardRef = gameRef.child('board'), 
 hiddenRef = gameRef.child('hidden'),
 turnRef = gameRef.child('turnNumber');
@@ -21,6 +22,7 @@ LETTER_X.src = 'letter_x.png'
 var auth = new FirebaseSimpleLogin(gameRef, function(error, user) {
 	if ( user ) {
 		$('h2').text('Welcome ' + user.displayName +'!');
+		gameRef.child('player_list').child(user.id).child('displayName').set(user.displayName);
 		manageConnection(user);
 	}
 	controller = new TicTacToe.Controller(user);
@@ -42,6 +44,17 @@ var manageConnection = function(user) {
 	    con.onDisconnect().remove();
 	  }
 	});
+}
+
+var updateLobby = function(snapshot) {
+	var player_list = snapshot.val()
+	lobbyHTML = '';
+
+	for ( player in player_list ) {
+		lobbyHTML += '<li>' + player_list[player].displayName + '</li>';
+	}
+
+	$('.lobby').html(lobbyHTML);
 }
 
 var showBoard = function(snapshot) {
@@ -159,7 +172,6 @@ TicTacToe.Board.prototype.checkForWins = function() {
 TicTacToe.Controller = function(user) {
 	this.gameRef = gameRef; 
 	this.playState = 0;
-	var players = this.waitToJoin(user);
 }
 
 // create the board
@@ -171,8 +183,6 @@ TicTacToe.Controller.prototype.initializeGame = function() {
 TicTacToe.Controller.prototype.joinGame = function(playerNum) {
 	this.myPlayerRef = this.gameRef.child('player_list').child(playerNum);
 	window.myPlayerRef = this.myPlayerRef;
-    this.myPlayerRef.child('connected').onDisconnect().remove();
-    this.boardRef = gameRef.child('board');
 
     if ( playerNum === 0 ) {
     	$('.player').text('You are Player O');
@@ -189,49 +199,6 @@ TicTacToe.Controller.prototype.joinGame = function(playerNum) {
     }
 }
 
-// when a player connects, they need to wait for a spot in the game if the game is already being played
-TicTacToe.Controller.prototype.waitToJoin = function(user) {
-    var _this = this,
-    playersRef = this.gameRef.child('player_list'),
-    playerNum, 
-    inGame = false
-    i = 0;
-
-  //   playersRef.transaction(function(players) {
-  //   	if (players === null) {
-  //   		players = {}
-  //   	}
-
-  //   	for (i = 0; i < players.length; i++) {
-		// 	if (players[i] === user) {
-		// 		inGame = true;
-		// 		playerNum = i; // Tell completion callback which seat we have.
-		// 		return;
-		// 	}
-		// }
-
-		// if ( i < NUM_PLAYERS ) {
-		// 	players[user.id] = user.displayName;
-		// 	playerNum = user.id;
-
-		// 	if ( playerNum === 1 ) {
-		// 		_this.ready = true; 
-		// 	}
-		// 	_this.players = players;
-		// 	return players;
-		// }
-		// return false;
-
-  //   }, function( error, committed) {
-  //   	if (committed) {
-  //   		_this.joinGame(playerNum);
-  //   		_this.gameRef.child('player_list').set(_this.players);
-  //   		console.log('player ' + playerNum + ' is online');
-  //   	} else if ( error ) {
-  //   		console.log('You were not let in, sorry!');
-  //   	}
-  //   });
-}
 
 auth.login('facebook');
 
@@ -242,4 +209,5 @@ turnRef.on('value', function(snapshot){
 	var turnNum = snapshot.val()
 	_this.turnNum = turnNum;
 })
+playerRef.on('value', updateLobby);
 
