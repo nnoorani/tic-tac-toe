@@ -24,11 +24,12 @@ p {
 	text-align: center;
 	padding: 30px;
 	background-color: rgba(238,238,238,0.5);
+	-webkit-transition: opacity 2s;
+    transition: opacity 2s;
 }
 
 .dimmed {
-	background-color: #EEE;
-	opacity: 0.5;
+	opacity: 0;
 }
 
 .warning {
