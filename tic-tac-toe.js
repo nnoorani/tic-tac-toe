@@ -1,7 +1,7 @@
 var TicTacToe = {},
 board = $('.board'),
 canvas = $('canvas'),
-initialBoard = [0,0,0,0,0,0,0,0]
+initialBoard = [0,0,0,0,0,0,0,0,0]
 board = [0,0,0,0,0,0,0,0,0],
 _this = this;
 
@@ -18,16 +18,37 @@ LETTER_O = new Image;
 LETTER_O.src = 'letter_o.png';
 LETTER_X.src = 'letter_x.png'
 
-function start() {
-	var user = prompt('Name?', 'Guest'),
+var auth = new FirebaseSimpleLogin(gameRef, function(error, user) {
+	if ( user ) {
+		$('h2').text('Welcome ' + user.displayName +'!');
+		manageConnection(user);
+	}
 	controller = new TicTacToe.Controller(user);
+});
+
+var manageConnection = function(user) {
+	var name = user.displayName,
+	connectionRef = gameRef.child('player_list').child(user.id).child('connections'),
+	connectedRef = new Firebase('https://blinding-fire-6122.firebaseio.com/.info/connected');
+	connectedRef.on('value', function(snap) {
+	  if (snap.val() === true) {
+	    // We're connected (or reconnected)! Do anything here that should happen only if online (or on reconnect)
+
+	    // add this device to my connections list
+	    // this value could contain info about the device or a timestamp too
+	    var con = connectionRef.push(true);
+
+	    // when I disconnect, remove this device
+	    con.onDisconnect().remove();
+	  }
+	});
 }
 
 var showBoard = function(snapshot) {
 	var hidden = snapshot.val();
 
 	if ( hidden === false) {
-		$('.board').show();
+		$('.board').removeClass('dimmed');
 		$('.status').text('Ready to play!')
 	}
 }
@@ -35,16 +56,29 @@ var showBoard = function(snapshot) {
 var updateBoard = function(snapshot) {
 	var boardStatus = snapshot.val(),
 	i = 0,
-	ticSpot;
+	ticSpot, 
+	status = $('.status');
 
 	if ( boardStatus !== null ) {
 		board = boardStatus;	
 	}
 	for ( i =0; i < canvas.length; i++ ) {
-		if( boardStatus && boardStatus[i] != 0 ) {
+		if ( boardStatus ) {
 			ticSpot = canvas[i].getContext('2d');
-			ticSpot.fillText(boardStatus[i], 25,25);
+			if( boardStatus && boardStatus[i] != 0 ) {
+				ticSpot.font = '100px Tahoma';
+				ticSpot.textAlign = 'center';
+				ticSpot.fillText(boardStatus[i], 50,85);
+			} else if ( boardStatus[i] == 0 ) {
+				ticSpot.clearRect(0,0,100,100)
+			}
 		}
+		
+	}
+
+	if ( status.text() === 'It is not your turn!' ) {
+		$(status).removeClass('warning');
+		$(status).text('Your turn!');
 	}
 }
 
@@ -77,7 +111,8 @@ TicTacToe.Board.prototype.placeMarker = function(event, playerRef) {
 	} else if ((turnNum % 2 !== 0) && window.myPlayerRef.marker === 'X' ) {
 		target.value = 'X';
 	} else {
-		console.log('its not your turn');
+		$('.status').addClass('warning');
+		$('.warning').text('It is not your turn!')
 	}
 
 	if (board[target.id] == 0  && target.value) {
@@ -89,63 +124,32 @@ TicTacToe.Board.prototype.placeMarker = function(event, playerRef) {
 }
 
 TicTacToe.Board.prototype.checkForWins = function() {
-	var i = 0, win, winner; 
+	var k = 0, 
+	// all win possibilities (diagonals, columns, rows)
+	wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [6,4,2]],
+	winner;
 
-	// check columns
-	 if (board[0] === board[3] && board[3] === board[6]) {
-	 	winner = board[0];
-	 	if (winner != 0 ) {
-	 		win = true
-	 	}
-	 } else if ((board[1] === board[4] && board[4] === board[7])) {
-	 	winner = board[1];
-	 	if (winner != 0 ) {
-	 		win = true
-	 	}
-	 } else if ((board[2] === board[5] && board[5] === board[8])) {
-	 	winner = board[2];
-	 	if (winner != 0 ) {
-	 		win = true
-	 	}
-	 }
-	// check rows
-	else if (board[0] === board[1] && board[1] === board[2]) {
-		winner = board[0];
-		if (winner != 0 ) {
-			win = true
-		}
-	} else if ((board[3] === board[4] && board[4] === board[5])) {
-		winner = board[3];
-		if (winner != 0 ) {
-			win = true
-		}
-	} else if ((board[6] === board[7] && board[7] === board[8])) {
-		winner = board[6];
-		if (winner != 0 ) {
-			win = true
-		}
-	}
+	for ( k; k < wins.length; k++ ) {
+        var pattern = wins[k];
+        if ( !winner ) {
+	        var p = board[pattern[0]] + board[pattern[1]] + board[pattern[2]];
+	        if (p == "XXX") {
+	          winner = 'X';
+	        } else if (p == "OOO") {
+	          winner = 'O'
+	        }
+    	}
+    }
 
-	// check diagonals
-	else if (board[0] === board[4] && board[4] === board[8]) {
-		winner = board[0];
-		if (winner != 0 ) {
-			win = true
-		}
-	} else if ((board[2] === board[4] && board[4] === board[6])) {
-		winner = board[3];
-		if (winner != 0 ) {
-			win = true
-		}
-	} 
-
-	if ( win ) {
+	if ( winner ) {
 		console.log(winner + ' is the winner');
+		$('.status').addClass('winner').text(winner + ' is the winner!');
+		boardRef.set(initialBoard);
 	}
 
-	if (_this.turnNum == 8 && !win) {
-		alert('Cats game!');
-	} else if ( _this.turnNum == 9 && !win ) {
+	if (_this.turnNum == 8 && !winner) {
+		$('.status').addClass('winner').text('Cats game!');
+	} else if ( _this.turnNum == 9 && !winner ) {
 		// set back to zero so the game can restart
 		_this.turnNum = 0
 	}
@@ -165,18 +169,17 @@ TicTacToe.Controller.prototype.initializeGame = function() {
 
 // once player has gotten a spot in the game, we set their player reference
 TicTacToe.Controller.prototype.joinGame = function(playerNum) {
-	var _this = this;
 	this.myPlayerRef = this.gameRef.child('player_list').child(playerNum);
 	window.myPlayerRef = this.myPlayerRef;
     this.myPlayerRef.child('connected').onDisconnect().remove();
     this.boardRef = gameRef.child('board');
 
     if ( playerNum === 0 ) {
-    	alert('Player 0 - you play with an O');
-    	window.myPlayerRef.marker = 'O';
+    	$('.player').text('You are Player O');
+    	_this.myPlayerRef.marker = 'O';
     } else if ( playerNum === 1 ) {
-    	alert('Player 1 - you play with an X');
-    	window.myPlayerRef.marker = 'X';
+    	$('.player').text('You are Player X');
+    	_this.myPlayerRef.marker = 'X';
     }
 
     this.initializeGame();
@@ -194,43 +197,43 @@ TicTacToe.Controller.prototype.waitToJoin = function(user) {
     inGame = false
     i = 0;
 
-    playersRef.transaction(function(players) {
-    	if (players === null) {
-    		players = []
-    	}
+  //   playersRef.transaction(function(players) {
+  //   	if (players === null) {
+  //   		players = {}
+  //   	}
 
-    	for (i = 0; i < players.length; i++) {
-			if (players[i] === user) {
-				inGame = true;
-				playerNum = i; // Tell completion callback which seat we have.
-				return;
-			}
-		}
+  //   	for (i = 0; i < players.length; i++) {
+		// 	if (players[i] === user) {
+		// 		inGame = true;
+		// 		playerNum = i; // Tell completion callback which seat we have.
+		// 		return;
+		// 	}
+		// }
 
-		if ( i < NUM_PLAYERS ) {
-			players[i] = user;
-			playerNum = i;
+		// if ( i < NUM_PLAYERS ) {
+		// 	players[user.id] = user.displayName;
+		// 	playerNum = user.id;
 
-			if ( playerNum === 1 ) {
-				_this.ready = true; 
-			}
-			_this.players = players;
-			return players;
-		}
-		return false;
+		// 	if ( playerNum === 1 ) {
+		// 		_this.ready = true; 
+		// 	}
+		// 	_this.players = players;
+		// 	return players;
+		// }
+		// return false;
 
-    }, function( error, committed) {
-    	if (committed) {
-    		_this.joinGame(playerNum);
-    		_this.gameRef.child('player_list').set(_this.players);
-    		console.log('player ' + playerNum + ' is online');
-    	} else if ( error ) {
-    		console.log('You were not let in, sorry!');
-    	}
-    });
+  //   }, function( error, committed) {
+  //   	if (committed) {
+  //   		_this.joinGame(playerNum);
+  //   		_this.gameRef.child('player_list').set(_this.players);
+  //   		console.log('player ' + playerNum + ' is online');
+  //   	} else if ( error ) {
+  //   		console.log('You were not let in, sorry!');
+  //   	}
+  //   });
 }
 
-start();
+auth.login('facebook');
 
 // when the board is in a ready state, need to trigger it to be shown and dimmed for the second player
 hiddenRef.on('value', showBoard);
