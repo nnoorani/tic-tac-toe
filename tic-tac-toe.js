@@ -99,7 +99,7 @@ function showBoard(snapshot) {
 //this gets called every time the board gets udpated
 function updateBoard(snapshot) {
 	boardStatus = snapshot.val();
-	var info = $('.info'), spots = 0;
+	var info = $('#message'), spots = 0;
 
 	//just fill in the html board here
 	for (i in boardStatus.board) {
@@ -113,16 +113,20 @@ function updateBoard(snapshot) {
 	//lets set up the info text
 	if (boardStatus.winner) {
 		//if we already have a winner
+		console.log(boardStatus.winner + ' is the winner, click to restart')
 		info.text(boardStatus.winner + ' is the winner, click to restart').click(restart)
 	} else if (spots===9) {
 		//if there's no winner but all nine spots are filled
+		console.log('Tie Game, Click to Restart')
 		info.text('Tie Game, Click to Restart').click(restart)
 	} else if (((spots%2 === 0) && boardStatus.o === userRef.name()) 
 			|| ((spots%2 !== 0) && boardStatus.x === userRef.name())) {
 		//its your turn
+		console.log('Your Turn')
 		info.text('Your turn!').removeClass('info').addClass('warning').off();
 	} else {
 		//its your opponents turn
+		console.log('Thier Turn')
 		info.text('Their Turn').removeClass('warning').addClass('info').off();
 	}
 }
