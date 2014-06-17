@@ -123,11 +123,11 @@ function updateBoard(snapshot) {
 			|| ((spots%2 !== 0) && boardStatus.x === userRef.name())) {
 		//its your turn
 		console.log('Your Turn')
-		info.text('Your turn!').removeClass('info').addClass('info').off();
+		info.text('Your turn!').removeClass('warning').addClass('info').off();
 	} else {
 		//its your opponents turn
 		console.log('Thier Turn')
-		info.text('Their Turn').removeClass('warning').addClass('warning').off();
+		info.text('Their Turn').removeClass('info').addClass('warning').off();
 	}
 }
 
