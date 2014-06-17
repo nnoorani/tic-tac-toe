@@ -7,7 +7,10 @@ _this = this;
 
 // firebase references
 var gameRef = new Firebase('https://blinding-fire-6122.firebaseio.com/'),
-playerRef = gameRef.child('player_list'), userRef;
+playerRef = gameRef.child('player_list'), userRef, 
+roomsRef = gameRef.child('rooms');
+
+var _user; //this is the global user
 
 //set up assets
 LETTER_X = new Image,
@@ -23,6 +26,7 @@ var auth = new FirebaseSimpleLogin(gameRef, function(error, user) {
 		
 		userRef = playerRef.child(user.id); //setup gloabl db
 		userRef.child('displayName').set(user.displayName); //add user to firebase
+		_user = user;
 		
 		manageConnection(user); //online status
 		userRef.on('value', showBoard); //show the board when playing
@@ -48,20 +52,37 @@ playerRef.on('value', updateLobby);
 function updateLobby(snapshot) {
 	var player_list = snapshot.val()	
 	lobbyHTML = '';
-	for ( player in player_list ) {
+	for (player in player_list) {
 		//if the player is online, show him the lobby
-		if (player_list[player].online) {
-			lobbyHTML += '<li>' + player_list[player].displayName + '</li>';
+		if (player_list[player].online && (_user === undefined || player != _user.id)) {
+			lobbyHTML += '<li data-id="' + player + '">' + player_list[player].displayName + '</li>';
 		}
 	}
 	$('.lobby').html(lobbyHTML);
 }
 
-//this gets called when my own name is updated
+$('.lobby li').click(function() {
+	opponent = $(this).attr("data-id");
+
+	thisGame = {};
+	thisGame.board = initialBoard;
+	thisGame.firstUser = _user.id;
+
+	boardRef = roomsRef.push(thisGame);
+	userRef.child('playing').set(myGame.name());
+	playerRef.child(opponent).child('playing').set(myGame.name());
+})
+
+//this gets called when my own user is updated
 function showBoard(snapshot) {
 	var me = snapshot.val();
-	if (me.playing) $('.board').removeClass('dimmed');
-	else $('.board').addClass('dimmed');
+	if (me.playing !== false) {
+		$('.board').removeClass('dimmed');
+		boardRef.on('value', updateBoard);
+	}
+	else {
+		$('.board').addClass('dimmed');
+	}
 }
 
 function updateBoard(snapshot) {
@@ -196,7 +217,7 @@ TicTacToe.Controller.prototype.joinGame = function(playerNum) {
 auth.login('facebook');
 
 // when the board is in a ready state, need to trigger it to be shown and dimmed for the second player
-// boardRef.on('value', updateBoard)
+// 
 // turnRef.on('value', function(snapshot){
 // 	var turnNum = snapshot.val()
 // 	_this.turnNum = turnNum;
