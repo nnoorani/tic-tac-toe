@@ -147,7 +147,7 @@ function restart() {
 }
 
 //set up click listeners for the board
-canvas.on('mousedown', placeMarker);
+canvas.on('click', placeMarker);
 
 //user clicked a box
 function placeMarker (event) {
@@ -171,10 +171,10 @@ function placeMarker (event) {
 		target.value = 'X';
 
 	//send it to firebase
-	if (target.value) boardRef.child('board').child(target.id).set(target.value);
-
-	//alright now check for winners
-	checkForWins();
+	if (target.value) {
+		boardRef.child('board').child(target.id).set(target.value);
+		checkForWins(); //did i just do a winning move?
+	}
 }
 
 //check for wins every time someone places a thing
