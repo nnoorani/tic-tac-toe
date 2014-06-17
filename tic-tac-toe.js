@@ -139,6 +139,7 @@ function updateBoard(snapshot) {
 		});
 	}
 
+	// checking whose turn it is
 	if ( $(info).text() === 'Their turn!' ) {
 		$(info).removeClass('warning').addClass('.info');
 		$(info).text('Your turn!');
@@ -191,11 +192,10 @@ function checkForWins() {
 		console.log(winner + ' is the winner');
 		$('.info').addClass('winner').text(winner + ' is the winner!');
 		boardRef.child('winner').set(winner);
-		boardRef.child('board').set(initialBoard);
 	}
 
 	if (_this.turnNum == 8 && !winner) {
-		$('.status').addClass('winner').text('Cats game!');
+		$('.info').addClass('winner').text('Cats game!');
 	} else if ( _this.turnNum == 9 && !winner ) {
 		// set back to zero so the game can restart
 		_this.turnNum = 0
