@@ -132,10 +132,6 @@ function restart() {
 	if (boardStatus === undefined || boardStatus === null
 		|| _user === undefined || _user === null) return
 
-	//figre out who's who
-	if (userRef.name() === boardStatus.o) opponent = boardStatus.x;
-	else opponent = boardStatus.o;
-
 	//lets set up a new game
 	newGame = {};
 	newGame.board = initialBoard;
@@ -146,8 +142,8 @@ function restart() {
 
 	//let firebase know that both me and my opponent are now playing
 	myNewGame = roomsRef.push(newGame);
-	userRef.child('playing').set(myNewGame.name());
-	playerRef.child(opponent).child('playing').set(myNewGame.name());
+	playerRef.child(newGame.o).child('playing').set(myNewGame.name());
+	playerRef.child(newGame.x).child('playing').set(myNewGame.name());
 }
 
 //set up click listeners for the board
