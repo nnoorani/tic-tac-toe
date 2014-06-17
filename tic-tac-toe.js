@@ -7,7 +7,7 @@ _this = this;
 
 // firebase references
 var gameRef = new Firebase('https://blinding-fire-6122.firebaseio.com/'),
-playerRef = gameRef.child('player_list'), userRef, 
+playerRef = gameRef.child('player_list'), userRef, boardRef
 roomsRef = gameRef.child('rooms');
 
 var _user; //this is the global user
@@ -61,14 +61,15 @@ function updateLobby(snapshot) {
 	$('.lobby').html(lobbyHTML);
 }
 
-$('.lobby li').click(function() {
+$('.lobby').on('click', 'li', function() {
+	alert("hi");
 	opponent = $(this).attr("data-id");
 
 	thisGame = {};
 	thisGame.board = initialBoard;
 	thisGame.firstUser = _user.id;
 
-	boardRef = roomsRef.push(thisGame);
+	myGame = roomsRef.push(thisGame);
 	userRef.child('playing').set(myGame.name());
 	playerRef.child(opponent).child('playing').set(myGame.name());
 })
@@ -76,12 +77,15 @@ $('.lobby li').click(function() {
 //this gets called when my own user is updated
 function showBoard(snapshot) {
 	var me = snapshot.val();
-	if (me.playing !== false) {
-		$('.board').removeClass('dimmed');
+	if (me.playing !== undefined && me.playing !== false) {
+		$('.board').removeClass('dimmed'); //show the board
+
+		boardRef = roomsRef.child(me.playing)
 		boardRef.on('value', updateBoard);
 	}
 	else {
 		$('.board').addClass('dimmed');
+		boardRef = null; //take out boardRef
 	}
 }
 

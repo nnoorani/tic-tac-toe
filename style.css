@@ -58,7 +58,7 @@ li {
 }
 
 .lobby {
-	position: absolute;
+	position: relative;
 	padding: 10px;
 }
 
