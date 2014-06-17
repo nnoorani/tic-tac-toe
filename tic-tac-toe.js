@@ -188,7 +188,7 @@ function checkForWins() {
 
 	//check for a XXX or OOO, always current user that wins
 	for (k in wins) {
-        var p = board[wins[k][0]] + board[wins[k][1]] + board[wins[k][2]];
+        var p = boardStatus.board[wins[k][0]] + boardStatus.board[wins[k][1]] + boardStatus.board[wins[k][2]];
         if (p == "XXX" || p == "OOO") winner = _user.displayName;
     }
 
