@@ -10,7 +10,8 @@ var gameRef = new Firebase('https://blinding-fire-6122.firebaseio.com/'),
 playerRef = gameRef.child('player_list'), userRef, boardRef
 roomsRef = gameRef.child('rooms');
 
-var _user; //this is the global user
+var _user, //this is the global user
+boardStatus; //this is the status of the board at all times
 
 //set up assets
 LETTER_X = new Image,
@@ -98,66 +99,53 @@ function showBoard(snapshot) {
 
 //this gets called every time the board gets udpated
 function updateBoard(snapshot) {
-	var boardStatus = snapshot.val(),
-	i = 0,
-	ticSpot, 
-	status = $('.status');
+	boardStatus = snapshot.val(),
+	i = 0;
 
-	if ( boardStatus !== null ) {
-		board = boardStatus;	
+	if ( boardStatus.board !== null ) {
+		board = boardStatus.board;	
 	}
 	for ( i =0; i < canvas.length; i++ ) {
-		if ( boardStatus ) {
-			ticSpot = canvas[i].getContext('2d');
-			if( boardStatus && boardStatus[i] != 0 ) {
-				ticSpot.font = '100px Tahoma';
-				ticSpot.textAlign = 'center';
-				ticSpot.fillText(boardStatus[i], 50,85);
-			} else if ( boardStatus[i] == 0 ) {
-				ticSpot.clearRect(0,0,100,100)
-			}
+		if ( board ) {
+			if( board[i] != 0 ) {
+				$(canvas[i]).html(board[i]);
+			} 
 		}
-		
 	}
 
-	if ( status.text() === 'It is not your turn!' ) {
-		$(status).removeClass('warning');
-		$(status).text('Your turn!');
+	for ( i = 0; i < 9; i++ ) {
+		$(canvas[i]).on('mousedown', function(evt, boardRef) {
+			placeMarker(evt, boardRef);
+		});
 	}
+
+	// if ( status.text() === 'It is not your turn!' ) {
+	// 	$(status).removeClass('warning');
+	// 	$(status).text('Your turn!');
+	// }
 }
 
 // Board functions
 TicTacToe.Board = function () {
-	this.gameRef = gameRef;
-	this.boardRef = gameRef.child('board');
-	this.gameRef.child('hidden').set(true);
-	this.boardRef.set(board)
 	this.initializeBoard();
 }
 
 TicTacToe.Board.prototype.initializeBoard = function(boardRef) {
 	var self = this;
 
-	for ( i = 0; i < 9; i++ ) {
-		$(canvas[i]).on('mousedown', function(evt, boardRef) {
-			self.placeMarker(evt, boardRef);
-		});
-	}
+
 }
 
-TicTacToe.Board.prototype.placeMarker = function(event, playerRef) {
+function placeMarker (event, playerRef) {
 	var target = event.target,
 	turnNum = _this.turnNum ? _this.turnNum : 0,
 	canvas;
 
-	if ( turnNum % 2 === 0 && window.myPlayerRef.marker === 'O' ) {
+	if (  boardStatus.firstUser === _user.id ) {
 		target.value = 'O';
-	} else if ((turnNum % 2 !== 0) && window.myPlayerRef.marker === 'X' ) {
-		target.value = 'X';
 	} else {
-		$('.status').addClass('warning');
-		$('.warning').text('It is not your turn!')
-	}
+		target.value = 'X';
+	} 
 
 	if (board[target.id] == 0  && target.value) {
 		this.boardRef.child(target.id).set(target.value);
@@ -229,7 +217,7 @@ TicTacToe.Controller.prototype.joinGame = function(playerNum) {
 auth.login('facebook');
 
 // when the board is in a ready state, need to trigger it to be shown and dimmed for the second player
-// 
+
 // turnRef.on('value', function(snapshot){
 // 	var turnNum = snapshot.val()
 // 	_this.turnNum = turnNum;
