@@ -1,7 +1,6 @@
 var board = $('.board'),
 canvas = $('.canvas'),
-initialBoard = [0,0,0,0,0,0,0,0,0]
-board = [0,0,0,0,0,0,0,0,0],
+initialBoard = [0,0,0,0,0,0,0,0,0],
 _this = this;
 
 // firebase references
@@ -52,7 +51,7 @@ function updateLobby(snapshot) {
 	lobbyHTML = '';
 	for (player in player_list) {
 		if (player_list[player].online //the player is online
-			&& (_user === undefined || player != _user.id) //and its not me
+			&& (_user === undefined || _user === null || player != _user.id) //and its not me
 			&& (player_list[player].playing === undefined || player_list[player].playing === false)) { //and the player is not in a game
 			lobbyHTML += '<li data-id="' + player + '">' + player_list[player].displayName + '</li>';
 		}
@@ -99,107 +98,103 @@ function showBoard(snapshot) {
 
 //this gets called every time the board gets udpated
 function updateBoard(snapshot) {
-	boardStatus = snapshot.val(),
-	i = 0,
-	info = $('.info');
+	boardStatus = snapshot.val();
+	var info = $('.info'), spots = 0;
 
-	if ( boardStatus.board !== null ) {
-		board = boardStatus.board;	
-	}
-	
-	for ( i =0; i < canvas.length; i++ ) {
-		if (board && board[i] != 0 ) {
-			$(canvas[i]).html(board[i]);
-		} 
+	//just fill in the html board here
+	for (i in boardStatus.board) {
+		if (boardStatus.board[i] != 0 ) {
+			$(canvas[i]).html(boardStatus.board[i]);
+			spots++;
+		}
+		else $(canvas[i]).html('');
 	}
 
-
-	if ( boardStatus.winner ) {
-		$('.info').text(boardStatus.winner + ' is the winner');
-		// let's make a new game for them again
-		opponent = boardStatus.x;
-
-		//lets set up a new game
-		newGame = {};
-		newGame.board = initialBoard;
-
-		// switch who starts first this time
-		newGame.o = boardStatus.x;
-		newGame.x = boardStatus.o;	
-
-		//let firebase know that both me and my opponent are now playing
-		myNewGame = roomsRef.push(newGame);
-		userRef.child('playing').set(myNewGame.name());
-		playerRef.child(opponent).child('playing').set(myNewGame.name());
-	}
-
-	for ( i = 0; i < 9; i++ ) {
-		$(canvas[i]).on('mousedown', function(evt) {
-			placeMarker(evt);
-		});
-	}
-
-	if ( $(info).text() === 'Their turn!' ) {
-		$(info).removeClass('warning').addClass('.info');
-		$(info).text('Your turn!');
+	//lets set up the info text
+	if (boardStatus.winner) {
+		//if we already have a winner
+		info.text(boardStatus.winner + ' is the winner, click to restart').addClass('clickable').click(restart)
+	} else if (spots===9) {
+		//if there's no winner but all nine spots are filled
+		info.text('Tie Game, Click to Restart').addClass('clickable').click(restart)
+	} else if (((spots%2 === 0) && boardStatus.o === userRef.name()) 
+			|| ((spots%2 !== 0) && boardStatus.x === userRef.name())) {
+		//its your turn
+		info.text('Your turn!').removeClass('info clickable').addClass('warning').off();
+	} else {
+		//its your opponents turn
+		info.text('Their Turn').removeClass('warning clickable').addClass('info').off();
 	}
 }
 
+function restart() {
+	//lets just make sure we have all our values first
+	if (boardStatus === undefined || boardStatus === null
+		|| _user === undefined || _user === null) return
+
+	//figre out who's who
+	if (userRef.name() === boardStatus.o) opponent = boardStatus.x;
+	else opponent = boardStatus.o;
+
+	//lets set up a new game
+	newGame = {};
+	newGame.board = initialBoard;
+
+	// switch who starts first this time
+	newGame.o = boardStatus.x;
+	newGame.x = boardStatus.o;	
+
+	//let firebase know that both me and my opponent are now playing
+	myNewGame = roomsRef.push(newGame);
+	userRef.child('playing').set(myNewGame.name());
+	playerRef.child(opponent).child('playing').set(myNewGame.name());
+}
+
+//set up click listeners for the board
+canvas.on('mousedown', placeMarker);
+
+//user clicked a box
 function placeMarker (event) {
 	var target = event.target, turnNum = 0;
 
-	for ( i = 0; i < board.length; i++ ) {
-		if ( board[i] != 0 ) {
-			turnNum += 1;
-		}
-	}
+	//did they click on a not empty box?
+	if (boardStatus.board[target.id] !== 0) return;
 
-	if (  ( turnNum%2 === 0 ) && boardStatus.o === userRef.name() ) {
+	//does this board already have a winner
+	if (boardStatus.winner) return;
+
+	for (i in boardStatus.board)
+		if (boardStatus.board[i] != 0 ) turnNum++;
+
+	//if its an even turn and current user is o
+	if ((turnNum%2 === 0) && boardStatus.o === userRef.name())
 		target.value = 'O';
-	} else if ( ( turnNum%2 !== 0 ) && boardStatus.o !== userRef.name() ) {
+
+	//if it is an odd turn and the current user is x
+	else if ((turnNum%2 !== 0) && boardStatus.x === userRef.name())
 		target.value = 'X';
-	} else {
-		$('.info').addClass('warning').text('Their turn!');
-	}
 
-	if (board[target.id] == 0  && target.value) {
-		boardRef.child('board').child(target.id).set(target.value);
-	}
+	//send it to firebase
+	if (target.value) boardRef.child('board').child(target.id).set(target.value);
 
+	//alright now check for winners
 	checkForWins();
 }
 
+//check for wins every time someone places a thing
 function checkForWins() {
-	var k = 0, 
 	// all win possibilities (diagonals, columns, rows)
-	wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [6,4,2]],
-	winner;
+	var wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [6,4,2]], winner;
 
-	for ( k; k < wins.length; k++ ) {
-        var pattern = wins[k];
-        if ( !winner ) {
-	        var p = board[pattern[0]] + board[pattern[1]] + board[pattern[2]];
-	        if (p == "XXX") {
-	          winner = 'X';
-	        } else if (p == "OOO") {
-	          winner = 'O'
-	        }
-    	}
+	//check for a XXX or OOO, always current user that wins
+	for (k in wins) {
+        var p = board[wins[k][0]] + board[wins[k][1]] + board[wins[k][2]];
+        if (p == "XXX" || p == "OOO") winner = _user.displayName;
     }
 
-	if ( winner ) {
-		console.log(winner + ' is the winner');
-		$('.info').addClass('winner').text(winner + ' is the winner!');
-		boardRef.child('winner').set(winner);
-		boardRef.child('board').set(initialBoard);
-	}
+    //Set the winner as the name of the current user
+	if (winner) boardRef.child('winner').set(winner);
 
-	if (_this.turnNum == 8 && !winner) {
-		$('.status').addClass('winner').text('Cats game!');
-	} else if ( _this.turnNum == 9 && !winner ) {
-		// set back to zero so the game can restart
-		_this.turnNum = 0
-	}
 }
 
 
