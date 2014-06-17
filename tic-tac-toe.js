@@ -1,5 +1,4 @@
-var TicTacToe = {},
-board = $('.board'),
+var board = $('.board'),
 canvas = $('.canvas'),
 initialBoard = [0,0,0,0,0,0,0,0,0]
 board = [0,0,0,0,0,0,0,0,0],
@@ -27,7 +26,7 @@ var auth = new FirebaseSimpleLogin(gameRef, function(error, user) {
 		
 		userRef = playerRef.child(user.id); //setup gloabl db
 		userRef.child('displayName').set(user.displayName); //add user to firebase
-		_user = user; //for refrence other places
+		_user = user; //for reference in other places
 		
 		manageConnection(user); //online status
 		userRef.on('value', showBoard); //show the board when playing
@@ -59,6 +58,9 @@ function updateLobby(snapshot) {
 		}
 	}
 	$('.lobby').html(lobbyHTML);
+	if ($('.lobby').children().length === 0) {
+		$('.lobby').text('No one else is playing right now');
+	}
 }
 
 //when i click on someone in the lobby
@@ -98,16 +100,24 @@ function showBoard(snapshot) {
 //this gets called every time the board gets udpated
 function updateBoard(snapshot) {
 	boardStatus = snapshot.val(),
-	i = 0;
+	i = 0,
+	info = $('.info');
 
 	if ( boardStatus.board !== null ) {
 		board = boardStatus.board;	
+	}
+
+	if ( boardStatus.winner ) {
+		$('.info').text(boardStatus.winner + ' is the winner');
+		boardStatus.board = board
 	}
 	
 	for ( i =0; i < canvas.length; i++ ) {
 		if (board && board[i] != 0 ) {
 			$(canvas[i]).html(board[i]);
-		} 
+		} else if ( ($(canvas[i]).text() == 'O' || $(canvas[i]).text() == 'X' ) && board[i] == 0 ) {
+			$(canvas[i]).html('');
+		}
 	}
 
 	for ( i = 0; i < 9; i++ ) {
@@ -116,10 +126,10 @@ function updateBoard(snapshot) {
 		});
 	}
 
-	// if ( status.text() === 'It is not your turn!' ) {
-	// 	$(status).removeClass('warning');
-	// 	$(status).text('Your turn!');
-	// }
+	if ( $(info).text() === 'Their turn!' ) {
+		$(info).removeClass('warning').addClass('.info');
+		$(info).text('Your turn!');
+	}
 }
 
 function placeMarker (event) {
@@ -135,7 +145,9 @@ function placeMarker (event) {
 		target.value = 'O';
 	} else if ( ( turnNum%2 !== 0 ) && boardStatus.o !== userRef.name() ) {
 		target.value = 'X';
-	} 
+	} else {
+		$('.info').addClass('warning').text('Their turn!');
+	}
 
 	if (board[target.id] == 0  && target.value) {
 		boardRef.child('board').child(target.id).set(target.value);
@@ -164,7 +176,8 @@ function checkForWins() {
 
 	if ( winner ) {
 		console.log(winner + ' is the winner');
-		$('.status').addClass('winner').text(winner + ' is the winner!');
+		$('.info').addClass('winner').text(winner + ' is the winner!');
+		boardRef.child('winner').set(winner);
 		boardRef.child('board').set(initialBoard);
 	}
 
@@ -176,32 +189,6 @@ function checkForWins() {
 	}
 }
 
-function joinGame(playerNum) {
-	this.myPlayerRef = this.gameRef.child('player_list').child(playerNum);
-	window.myPlayerRef = this.myPlayerRef;
-
-    if ( playerNum === 0 ) {
-    	$('.player').text('You are Player O');
-    	_this.myPlayerRef.marker = 'O';
-    } else if ( playerNum === 1 ) {
-    	$('.player').text('You are Player X');
-    	_this.myPlayerRef.marker = 'X';
-    }
-
-    this.board = new TicTacToe.Board();
-
-    if ( this.ready === true ) {
-		this.gameRef.child('hidden').set(false);
-    }
-}
-
 
 auth.login('facebook');
-
-// when the board is in a ready state, need to trigger it to be shown and dimmed for the second player
-
-// turnRef.on('value', function(snapshot){
-// 	var turnNum = snapshot.val()
-// 	_this.turnNum = turnNum;
-// })
 

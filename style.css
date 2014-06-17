@@ -1,4 +1,8 @@
-h1, h2, h3, li, p {
+body {
+	margin: 0;
+}
+
+h1, h2, h3, ul, li, p {
 	font-family: 'Helvetica Neue', 'Tahoma';
 	font-weight: 100;
 	text-align: center;
@@ -9,6 +13,11 @@ h1 {
 	padding: 15px;
 	background-color: #00AAB5;
 	margin-bottom: 0;
+}
+
+h3 {
+	font-weight: 200;
+	text-transform: uppercase;
 }
 
 p {
@@ -33,7 +42,7 @@ li {
 
 .board {
 	position: relative;
-	text-align: right;
+	text-align: center;
 	padding: 30px;
 	background-color: rgba(238,238,238,0.5);
 	-webkit-transition: opacity 2s;
@@ -45,13 +54,16 @@ li {
 	opacity: 0;
 }
 
-.warning {
-	border: 2px solid #EF504F;
+.warning, .info {
 	background-color: #EF504F;
 	padding: 13px;
 	margin: auto;
 	color: #fff;
 	font-weight: 200;
+}
+
+.info {
+	background-color: #A8BF12;
 }
 
 .player {
@@ -63,6 +75,9 @@ li {
 	border: 1px solid #aaa;
 }
 
+.lobby_container {
+	border: 1px solid #00AAB5;
+}
 .lobby {
 	position: relative;
 	padding: 10px;
