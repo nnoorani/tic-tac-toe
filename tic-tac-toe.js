@@ -1,6 +1,6 @@
 var TicTacToe = {},
 board = $('.board'),
-canvas = $('canvas'),
+canvas = $('.canvas'),
 initialBoard = [0,0,0,0,0,0,0,0,0]
 board = [0,0,0,0,0,0,0,0,0],
 _this = this;
@@ -69,7 +69,7 @@ $('.lobby').on('click', 'li', function() {
 	//lets set up a new game for you shall we
 	thisGame = {};
 	thisGame.board = initialBoard;
-	thisGame.o = _user.id;
+	thisGame.o = userRef.name();
 	thisGame.x = opponent;	
 
 	//let firebase know that both me and my opponent are now playing
@@ -123,7 +123,7 @@ function updateBoard(snapshot) {
 }
 
 function placeMarker (event) {
-	var target = event.target, turnNum;
+	var target = event.target, turnNum = 0;
 
 	for ( i = 0; i < board.length; i++ ) {
 		if ( board[i] != 0 ) {
@@ -131,9 +131,9 @@ function placeMarker (event) {
 		}
 	}
 
-	if (  ( turnNum%2 === 0 ) && boardStatus.o === _user.id ) {
+	if (  ( turnNum%2 === 0 ) && boardStatus.o === userRef.name() ) {
 		target.value = 'O';
-	} else {
+	} else if ( ( turnNum%2 !== 0 ) && boardStatus.o !== userRef.name() ) {
 		target.value = 'X';
 	} 
 
@@ -165,7 +165,7 @@ function checkForWins() {
 	if ( winner ) {
 		console.log(winner + ' is the winner');
 		$('.status').addClass('winner').text(winner + ' is the winner!');
-		boardRef.set(initialBoard);
+		boardRef.child('board').set(initialBoard);
 	}
 
 	if (_this.turnNum == 8 && !winner) {
