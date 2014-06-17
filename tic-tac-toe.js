@@ -26,7 +26,7 @@ var auth = new FirebaseSimpleLogin(gameRef, function(error, user) {
 		
 		userRef = playerRef.child(user.id); //setup gloabl db
 		userRef.child('displayName').set(user.displayName); //add user to firebase
-		_user = user;
+		_user = user; //for refrence other places
 		
 		manageConnection(user); //online status
 		userRef.on('value', showBoard); //show the board when playing
@@ -53,22 +53,27 @@ function updateLobby(snapshot) {
 	var player_list = snapshot.val()	
 	lobbyHTML = '';
 	for (player in player_list) {
-		//if the player is online, show him the lobby
-		if (player_list[player].online && (_user === undefined || player != _user.id)) {
+		if (player_list[player].online //the player is online
+			&& (_user === undefined || player != _user.id) //and its not me
+			&& (player_list[player].playing === undefined || player_list[player].playing === false)) { //and the player is not in a game
 			lobbyHTML += '<li data-id="' + player + '">' + player_list[player].displayName + '</li>';
 		}
 	}
 	$('.lobby').html(lobbyHTML);
 }
 
+//when i click on someone in the lobby
 $('.lobby').on('click', 'li', function() {
-	alert("hi");
+	//who did i click on in the lobby
 	opponent = $(this).attr("data-id");
 
+	//lets set up a new game for you shall we
 	thisGame = {};
 	thisGame.board = initialBoard;
-	thisGame.firstUser = _user.id;
+	thisGame.o = _user.id;
+	thisGame.x = opponent;	
 
+	//let firebase know that both me and my opponent are now playing
 	myGame = roomsRef.push(thisGame);
 	userRef.child('playing').set(myGame.name());
 	playerRef.child(opponent).child('playing').set(myGame.name());
@@ -76,11 +81,13 @@ $('.lobby').on('click', 'li', function() {
 
 //this gets called when my own user is updated
 function showBoard(snapshot) {
-	var me = snapshot.val();
-	if (me.playing !== undefined && me.playing !== false) {
+	_user = snapshot.val(); //update my user as i go
+
+	//if i am playing a game, lets make me this game :D
+	if (_user.playing !== undefined && _user.playing !== false) {
 		$('.board').removeClass('dimmed'); //show the board
 
-		boardRef = roomsRef.child(me.playing)
+		boardRef = roomsRef.child(_user.playing) //set up the refrence to my game
 		boardRef.on('value', updateBoard);
 	}
 	else {
@@ -89,6 +96,7 @@ function showBoard(snapshot) {
 	}
 }
 
+//this gets called every time the board gets udpated
 function updateBoard(snapshot) {
 	var boardStatus = snapshot.val(),
 	i = 0,
