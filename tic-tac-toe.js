@@ -113,21 +113,17 @@ function updateBoard(snapshot) {
 	//lets set up the info text
 	if (boardStatus.winner) {
 		//if we already have a winner
-		console.log(boardStatus.winner + ' is the winner, click to restart')
-		info.text(boardStatus.winner + ' is the winner, click to restart').click(restart)
+		info.text(boardStatus.winner + ' is the winner, click to restart').click(function() {restart()});
 	} else if (spots===9) {
 		//if there's no winner but all nine spots are filled
-		console.log('Tie Game, Click to Restart')
-		info.text('Tie Game, Click to Restart').click(restart)
+		info.text('Tie Game, Click to Restart').click(function() {restart()});
 	} else if (((spots%2 === 0) && boardStatus.o === userRef.name()) 
 			|| ((spots%2 !== 0) && boardStatus.x === userRef.name())) {
 		//its your turn
-		console.log('Your Turn')
-		info.text('Your turn!').removeClass('info').addClass('info').off();
+		info.text('Your turn!').removeClass('warning').addClass('info').off();
 	} else {
 		//its your opponents turn
-		console.log('Thier Turn')
-		info.text('Their Turn').removeClass('warning').addClass('warning').off();
+		info.text('Their Turn').removeClass('info').addClass('warning').off();
 	}
 }
 
