@@ -31,7 +31,6 @@ var auth = new FirebaseSimpleLogin(gameRef, function(error, user) {
 		
 		manageConnection(user); //online status
 		userRef.on('value', showBoard); //show the board when playing
-
 	}
 });
 
@@ -104,12 +103,11 @@ function updateBoard(snapshot) {
 	if ( boardStatus.board !== null ) {
 		board = boardStatus.board;	
 	}
+	
 	for ( i =0; i < canvas.length; i++ ) {
-		if ( board ) {
-			if( board[i] != 0 ) {
-				$(canvas[i]).html(board[i]);
-			} 
-		}
+		if (board && board[i] != 0 ) {
+			$(canvas[i]).html(board[i]);
+		} 
 	}
 
 	for ( i = 0; i < 9; i++ ) {
