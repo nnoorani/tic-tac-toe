@@ -170,11 +170,11 @@ function placeMarker (event) {
 	else if ((turnNum%2 !== 0) && boardStatus.x === userRef.name())
 		target.value = 'X';
 
+	else return
+
 	//send it to firebase
-	if (target.value) {
-		boardRef.child('board').child(target.id).set(target.value);
-		checkForWins(); //did i just do a winning move?
-	}
+	boardRef.child('board').child(target.id).set(target.value);
+	checkForWins(); //did i just do a winning move?
 }
 
 //check for wins every time someone places a thing
