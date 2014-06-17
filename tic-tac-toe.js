@@ -68,7 +68,7 @@ $('.lobby').on('click', 'li', function() {
 	//who did i click on in the lobby
 	opponent = $(this).attr("data-id");
 
-	//lets set up a new game for you shall we
+	//lets set up a new game
 	thisGame = {};
 	thisGame.board = initialBoard;
 	thisGame.o = userRef.name();
@@ -110,15 +110,27 @@ function updateBoard(snapshot) {
 	for ( i =0; i < canvas.length; i++ ) {
 		if (board && board[i] != 0 ) {
 			$(canvas[i]).html(board[i]);
-		} else if ( boardStatus.winner ) {
-			$(canvas[i]).html('');
-		}
+		} 
 	}
 
 
 	if ( boardStatus.winner ) {
 		$('.info').text(boardStatus.winner + ' is the winner');
-		boardRef.child('winner').set(null);
+		// let's make a new game for them again
+		opponent = boardStatus.x;
+
+		//lets set up a new game
+		newGame = {};
+		newGame.board = initialBoard;
+
+		// switch who starts first this time
+		newGame.o = boardStatus.x;
+		newGame.x = boardStatus.o;	
+
+		//let firebase know that both me and my opponent are now playing
+		myNewGame = roomsRef.push(newGame);
+		userRef.child('playing').set(myNewGame.name());
+		playerRef.child(opponent).child('playing').set(myNewGame.name());
 	}
 
 	for ( i = 0; i < 9; i++ ) {
