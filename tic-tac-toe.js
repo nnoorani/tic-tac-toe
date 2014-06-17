@@ -194,7 +194,6 @@ function checkForWins() {
 
     //Set the winner as the name of the current user
 	if (winner) boardRef.child('winner').set(winner);
-
 }
 
 
