@@ -88,7 +88,7 @@ function showBoard(snapshot) {
 	if (_user.playing !== undefined && _user.playing !== false) {
 		$('.board').removeClass('dimmed'); //show the board
 
-		boardRef = roomsRef.child(_user.playing) //set up the refrence to my game
+		boardRef = roomsRef.child(_user.playing) //set up the reference to my game
 		boardRef.on('value', updateBoard);
 	}
 	else {
@@ -106,18 +106,19 @@ function updateBoard(snapshot) {
 	if ( boardStatus.board !== null ) {
 		board = boardStatus.board;	
 	}
-
-	if ( boardStatus.winner ) {
-		$('.info').text(boardStatus.winner + ' is the winner');
-		boardStatus.board = board
-	}
 	
 	for ( i =0; i < canvas.length; i++ ) {
 		if (board && board[i] != 0 ) {
 			$(canvas[i]).html(board[i]);
-		} else if ( ($(canvas[i]).text() == 'O' || $(canvas[i]).text() == 'X' ) && board[i] == 0 ) {
+		} else if ( boardStatus.winner ) {
 			$(canvas[i]).html('');
 		}
+	}
+
+
+	if ( boardStatus.winner ) {
+		$('.info').text(boardStatus.winner + ' is the winner');
+		boardRef.child('winner').set(null);
 	}
 
 	for ( i = 0; i < 9; i++ ) {

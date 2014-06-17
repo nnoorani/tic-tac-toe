@@ -58,7 +58,6 @@ li {
 	background-color: #EF504F;
 	padding: 13px;
 	margin: auto;
-	color: #fff;
 	font-weight: 200;
 }
 
@@ -81,8 +80,4 @@ li {
 .lobby {
 	position: relative;
 	padding: 10px;
-}
-
-.lobby > li {
-	text-align: left;
 }
