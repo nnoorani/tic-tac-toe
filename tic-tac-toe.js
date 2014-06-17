@@ -32,7 +32,6 @@ var auth = new FirebaseSimpleLogin(gameRef, function(error, user) {
 		manageConnection(user); //online status
 		userRef.on('value', showBoard); //show the board when playing
 
-		controller = new TicTacToe.Controller(user); //start the app
 	}
 });
 
@@ -106,8 +105,8 @@ function updateBoard(snapshot) {
 	}
 
 	for ( i = 0; i < 9; i++ ) {
-		$(canvas[i]).on('mousedown', function(evt, boardRef) {
-			placeMarker(evt, boardRef);
+		$(canvas[i]).on('mousedown', function(evt) {
+			placeMarker(evt);
 		});
 	}
 
@@ -117,37 +116,29 @@ function updateBoard(snapshot) {
 	// }
 }
 
-// Board functions
-TicTacToe.Board = function () {
-	this.initializeBoard();
-}
+function placeMarker (event) {
+	var target = event.target, turnNum;
 
-TicTacToe.Board.prototype.initializeBoard = function(boardRef) {
-	var self = this;
+	for ( i = 0; i < board.length; i++ ) {
+		if ( board[i] != 0 ) {
+			turnNum += 1;
+		}
+	}
 
-
-}
-
-function placeMarker (event, playerRef) {
-	var target = event.target,
-	turnNum = _this.turnNum ? _this.turnNum : 0,
-	canvas;
-
-	if (  boardStatus.firstUser === _user.id ) {
+	if (  ( turnNum%2 === 0 ) && boardStatus.o === _user.id ) {
 		target.value = 'O';
 	} else {
 		target.value = 'X';
 	} 
 
 	if (board[target.id] == 0  && target.value) {
-		this.boardRef.child(target.id).set(target.value);
-		turnNum += 1;
+		boardRef.child('board').child(target.id).set(target.value);
 	}
-	this.checkForWins();
-	_this.turnRef.set(turnNum);
+
+	checkForWins();
 }
 
-TicTacToe.Board.prototype.checkForWins = function() {
+function checkForWins() {
 	var k = 0, 
 	// all win possibilities (diagonals, columns, rows)
 	wins = [[0,1,2], [3,4,5], [6,7,8], [0,3,6], [1,4,7], [2,5,8], [0,4,8], [6,4,2]],
@@ -179,14 +170,7 @@ TicTacToe.Board.prototype.checkForWins = function() {
 	}
 }
 
-// game controller functions
-TicTacToe.Controller = function(user) {
-	this.gameRef = gameRef; 
-	this.playState = 0;
-}
-
-// once player has gotten a spot in the game, we set their player reference
-TicTacToe.Controller.prototype.joinGame = function(playerNum) {
+function joinGame(playerNum) {
 	this.myPlayerRef = this.gameRef.child('player_list').child(playerNum);
 	window.myPlayerRef = this.myPlayerRef;
 
